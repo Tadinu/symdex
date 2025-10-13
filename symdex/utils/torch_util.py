@@ -70,7 +70,7 @@ class RunningMeanStd:
 
     def update(self, x):
         batch_mean = x.mean(dim=0)
-        batch_var = x.var(dim=0)
+        batch_var = x.var(dim=0, unbiased=torch.numel(x) > 1)
         batch_count = x.shape[0]
         self.update_from_moments(batch_mean, batch_var, batch_count)
 

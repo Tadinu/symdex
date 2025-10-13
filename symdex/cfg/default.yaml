@@ -5,14 +5,14 @@ defaults:
   - _self_
 
 env_name: "boxLift-v0"
-num_envs: 4096
+num_envs: 1 #4096
 device: 'cuda:0'
 sim_device: ${.device}
 rl_device: ${.device}
 graphics_device_id: 0
 
 seed: 42
-max_step: null
+max_step: 10
 max_time: 36000 # in seconds
 eval_headless: True
 headless: True

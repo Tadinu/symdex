@@ -1,4 +1,4 @@
-import wandb
+import trackio as wandb
 import torch
 from loguru import logger
 from pathlib import Path

@@ -7,6 +7,7 @@ from torch.nn.utils import clip_grad_norm_
 
 from symdex.utils.common import load_class_from_path, Tracker
 from symdex.algo.network import model_name_to_path
+from symdex.algo.network.mlp import EquivariantMLPNet
 from symdex.utils.torch_util import RunningMeanStd
 from symdex.utils.symmetry import load_symmetric_system
 
@@ -24,10 +25,10 @@ class ActorCriticBase:
             self.obs_dim = self.env.observation_space.shape
         if self.action_dim is None:
             self.action_dim = self.env.action_space.shape[0]
-        act_class = load_class_from_path(self.cfg.algo.act_class,
-                                         model_name_to_path[self.cfg.algo.act_class])
-        cri_class = load_class_from_path(self.cfg.algo.cri_class,
-                                         model_name_to_path[self.cfg.algo.cri_class])
+        act_class: type[EquivariantMLPNet] = load_class_from_path(self.cfg.algo.act_class,
+                                                                  model_name_to_path[self.cfg.algo.act_class])
+        cri_class: type[EquivariantMLPNet] = load_class_from_path(self.cfg.algo.cri_class,
+                                                                  model_name_to_path[self.cfg.algo.cri_class])
         if not self.cfg.algo.multi_agent:
             if "Equivariant" in self.cfg.algo.act_class:
                 self.G = load_symmetric_system(cfg=self.cfg.task.symmetry)

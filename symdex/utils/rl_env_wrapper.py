@@ -55,7 +55,7 @@ class VecEnvWrapper:
     @property
     def render_mode(self) -> str | None:
         """Returns the :attr:`Env` :attr:`render_mode`."""
-        return self.env.render_mode
+        return self.env.sim.render_mode
 
     @property
     def observation_space(self) -> gym.spaces.Box:

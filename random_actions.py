@@ -1,29 +1,32 @@
-
-from isaaclab.app import AppLauncher
-
-app_launcher = AppLauncher({"headless": False})
-simulation_app = app_launcher.app
-
 import torch
 import hydra
 from omegaconf import DictConfig
 import gymnasium as gym
 
-from symdex.utils.common import set_random_seed, capture_keyboard_interrupt, preprocess_cfg
+# isaaclab
+from isaaclab.app import AppLauncher
 
+app_launcher = AppLauncher({"headless": False})
+simulation_app = app_launcher.app
+
+from isaaclab_tasks.utils.parse_cfg import parse_env_cfg
+
+# symdex
 import symdex
 from symdex.env.tasks.manager_based_env_cfg import *
 from symdex.utils.rl_env_wrapper import VecEnvWrapper
+from symdex.utils.common import set_random_seed, capture_keyboard_interrupt, customize_cfg
 
 
-@hydra.main(config_path=symdex.LIB_PATH_PATH.joinpath('cfg').as_posix(), config_name="default")
-def main(cfg: DictConfig):
+@hydra.main(config_path=symdex.LIB_PATH_PATH.joinpath('cfg').as_posix(), config_name="default", version_base=None)
+def main(hydra_cfg: DictConfig):
     torch.set_printoptions(sci_mode=False, precision=3)
-    set_random_seed(cfg.seed)
+    set_random_seed(hydra_cfg.seed)
     capture_keyboard_interrupt()
-    cfg, env_cfg = preprocess_cfg(cfg)
-    env = gym.make(cfg.env_name, cfg=env_cfg)
-    env = VecEnvWrapper(env, rl_device=cfg.rl_device)
+    hydra_cfg, _ = customize_cfg(hydra_cfg)
+    env_cfg = parse_env_cfg(hydra_cfg.env_name, device=hydra_cfg.device, num_envs=hydra_cfg.num_envs)
+    env = gym.make(hydra_cfg.env_name, cfg=env_cfg, hydra_cfg=hydra_cfg)
+    env = VecEnvWrapper(env, rl_device=hydra_cfg.rl_device)
     count = 0
     env.reset()
     env.unwrapped.update_randomization(0.0)

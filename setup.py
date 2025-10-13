@@ -33,7 +33,7 @@ setup(
         "hydra-core",
         "loguru",
         "ray",
-        "wandb",
+        #"wandb",
         "cloudpickle",
         "scipy",
         "shortuuid",

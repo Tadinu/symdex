@@ -1,5 +1,7 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Optional, Union
+import os
 import ast
-import platform
 import random
 from collections import deque
 from collections.abc import Sequence
@@ -7,12 +9,24 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import wandb
+import platform
 from loguru import logger
-from omegaconf import OmegaConf, open_dict
-from isaaclab_tasks.utils import load_cfg_from_registry
+from omegaconf import OmegaConf, open_dict, DictConfig
 
-def set_random_seed(seed=None):
+# trackio
+if not os.environ.get('TRACKIO_DIR'):
+    os.environ['TRACKIO_DIR'] = "/media/ducthan/376b23a1-5a02-4960-b3ca-24b2fcef8f891/TRACKIO_WANDB_CACHE"
+import trackio as wandb
+
+# isaaclab
+from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
+
+# symdex
+from symdex import LIB_PATH_PATH
+CONFIG_DIR=LIB_PATH_PATH.joinpath('cfg').as_posix()
+CONFIG_NAME='default'
+
+def set_random_seed(seed: Optional[int]=None):
     if seed is None:
         max_seed_value = np.iinfo(np.uint32).max
         min_seed_value = np.iinfo(np.uint32).min
@@ -23,24 +37,24 @@ def set_random_seed(seed=None):
     logger.info(f'Setting random seed to:{seed}')
     return seed
 
-def init_wandb(cfg):
-    wandb_cfg = OmegaConf.to_container(cfg, resolve=True,
+def init_wandb(hydra_cfg) -> wandb.Run:
+    wandb_cfg = OmegaConf.to_container(hydra_cfg, resolve=True,
                                        throw_on_missing=True)
     wandb_cfg['hostname'] = platform.node()
-    wandb_kwargs = cfg.logging.wandb
+    wandb_kwargs = hydra_cfg.logging.wandb
     wandb_tags = wandb_kwargs.get('tags', None)
     if wandb_tags is not None and isinstance(wandb_tags, str):
         wandb_kwargs['tags'] = [wandb_tags]
-    # if cfg.artifact is not None:
-    #     wandb_id = cfg.artifact.split("/")[-1].split(":")[0]
+    # if hydra_cfg.artifact is not None:
+    #     wandb_id = hydra_cfg.artifact.split("/")[-1].split(":")[0]
     #     wandb_run = wandb.init(**wandb_kwargs, config=wandb_cfg, id=wandb_id, resume="must")
     # else:
     wandb_run = wandb.init(**wandb_kwargs, config=wandb_cfg)
-    logger.warning(f'Wandb run dir:{wandb_run.dir}')
-    logger.warning(f'Project name:{wandb_run.project_name()}')
+    #logger.warning(f'Wandb run dir:{TRACKIO_DIR}')
+    logger.warning(f'Project name:{wandb_run.project}')
     return wandb_run
 
-def load_class_from_path(cls_name, path):
+def load_class_from_path(cls_name, path) -> type:
     mod_name = 'MOD%s' % cls_name
     import importlib.util
     import sys
@@ -57,7 +71,7 @@ def pathlib_file(file_name):
         raise TypeError(f'Please check the type of the filename:{file_name}')
     return file_name
 
-def list_class_names(dir_path):
+def list_class_names(dir_path) -> dict[str, str]:
     """
     Return the mapping of class names in all files
     in dir_path to their file path.
@@ -89,28 +103,28 @@ def capture_keyboard_interrupt():
 
     signal.signal(signal.SIGINT, signal_handler)
 
-def preprocess_cfg(cfg):
-    with open_dict(cfg):
-        cfg.available_gpus = torch.cuda.device_count()
-    cfg.env_name = cfg.task.env_name
+def customize_cfg(hydra_cfg: DictConfig) -> tuple[DictConfig, Union[dict, DictConfig]]:
+    with open_dict(hydra_cfg):
+        hydra_cfg.available_gpus = torch.cuda.device_count()
+    hydra_cfg.env_name = hydra_cfg.task.env_name
 
-    env_cfg = load_cfg_from_registry(cfg.env_name, "env_cfg_entry_point")
-    env_cfg.scene.num_envs = cfg.num_envs
-    env_cfg.episode_length_s = cfg.max_episode_length * env_cfg.decimation * env_cfg.sim.dt
+    env_cfg = load_cfg_from_registry(hydra_cfg.env_name, "env_cfg_entry_point")
+    env_cfg.scene.num_envs = hydra_cfg.num_envs
+    env_cfg.episode_length_s = hydra_cfg.max_episode_length * env_cfg.decimation * env_cfg.sim.dt
 
     # update rew term
     rew_term = env_cfg.rewards.to_dict()
-    for key, value in cfg.task.rew.items():
+    for key, value in hydra_cfg.task.rew.items():
         if key in rew_term:
             rew_term[key]['weight'] = float(value)
     env_cfg.rewards.from_dict(rew_term)
 
     # add hydra config to env_cfg
-    env_cfg.hydra_cfg = cfg
-    env_cfg.seed = cfg.seed
+    env_cfg.hydra_cfg = hydra_cfg
+    env_cfg.seed = hydra_cfg.seed
 
     # update entropy scale for each task
-    task_name = cfg.task.env_name
+    task_name = hydra_cfg.task.env_name
     task_entropy_scale = {
         "BoxLiftEnv-v0": 0.0,
         "InsertDrawerEnv-v0": 0.01,
@@ -121,9 +135,9 @@ def preprocess_cfg(cfg):
     }
     # only change the scale if the user does not pass in a new scale (default is 1.0)
     if task_name in task_entropy_scale:
-        cfg.algo.lambda_entropy = task_entropy_scale[task_name]
+        hydra_cfg.algo.lambda_entropy = task_entropy_scale[task_name]
 
-    return cfg, env_cfg
+    return hydra_cfg, env_cfg
 
 def aggregate_traj_info(infos, key, single_info=False):
     if single_info:

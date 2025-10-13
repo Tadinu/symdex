@@ -1,10 +1,12 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 import torch
 from copy import deepcopy
 
 from symdex.algo.ac_base import ActorCriticBase
+from symdex.algo.network.mlp import EquivariantMLPNet
 from symdex.utils.torch_util import RunningMeanStd
 from symdex.utils.common import aggregate_traj_info, load_class_from_path
 from symdex.algo.network import model_name_to_path
@@ -17,10 +19,10 @@ class AgentSYMDEX(ActorCriticBase):
         self.algo_multi_cfg = self.cfg.task.multi.SYMDEX
         self.obs_dim = list(self.cfg.task.multi.SYMDEX.single_agent_obs_dim)
         self.action_dim = int(self.cfg.task.multi.SYMDEX.single_agent_action_dim)
-        act_class = load_class_from_path(self.cfg.algo.act_class,
-                                         model_name_to_path[self.cfg.algo.act_class])
-        cri_class = load_class_from_path(self.cfg.algo.cri_class,
-                                         model_name_to_path[self.cfg.algo.cri_class])
+        act_class: type[EquivariantMLPNet] = load_class_from_path(self.cfg.algo.act_class,
+                                                                  model_name_to_path[self.cfg.algo.act_class])
+        cri_class: type[EquivariantMLPNet] = load_class_from_path(self.cfg.algo.cri_class,
+                                                                  model_name_to_path[self.cfg.algo.cri_class])
         self.G = load_symmetric_system(cfg=self.cfg.task.symmetry)
         self.actor = act_class(self.G, self.cfg.task.symmetry.SYMDEX.actor_input_fields[0], self.cfg.task.symmetry.SYMDEX.actor_output_fields[0], self.obs_dim[0], self.action_dim).to(self.cfg.device)
         self.actor_left = act_class(self.G, self.cfg.task.symmetry.SYMDEX.actor_input_fields[1], self.cfg.task.symmetry.SYMDEX.actor_output_fields[1], self.obs_dim[1], self.action_dim).to(self.cfg.device)
@@ -116,13 +118,17 @@ class AgentSYMDEX(ActorCriticBase):
         
         ob_right, ob_left = self.symmetry_manager.get_multi_agent_obs(ob, env.unwrapped.symmetry_tracker)
         data = self.compute_adv((traj_obs, traj_actions, traj_logprobs, traj_rewards,
-                                 traj_dones, traj_values, ob_right, dones), gae=self.cfg.algo.use_gae, timeout=self.timeout_info, critic=self.critic, value_rms=self.value_rms)
+                                 traj_dones, traj_values, ob_right, dones), gae=self.cfg.algo.use_gae,
+                                timeout=self.timeout_info, critic=self.critic, value_rms=self.value_rms)
         data_left = self.compute_adv((traj_obs_left, traj_actions_left, traj_logprobs_left, traj_rewards_left,
-                                 traj_dones, traj_values_left, ob_left, dones), gae=self.cfg.algo.use_gae, timeout=self.timeout_info, critic=self.critic_left, value_rms=self.value_rms_left)
+                                 traj_dones, traj_values_left, ob_left, dones), gae=self.cfg.algo.use_gae,
+                                     timeout=self.timeout_info, critic=self.critic_left, value_rms=self.value_rms_left)
 
         return [data, data_left], timesteps * self.cfg.num_envs
 
-    def compute_adv(self, buffer, gae=True, timeout=None, critic=None, value_rms=None):
+    def compute_adv(self, buffer, gae: bool=True, timeout:Optional[torch.Tensor]=None,
+                    critic:Optional[EquivariantMLPNet]=None,
+                    value_rms: Optional[RunningMeanStd]=None):
         with torch.no_grad():
             obs, actions, logprobs, rewards, dones, values, next_obs, next_done = buffer
             obs_dim = (obs.shape[-1],)

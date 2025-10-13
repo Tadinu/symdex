@@ -3,7 +3,7 @@ from copy import deepcopy
 import torch
 
 from symdex.utils.common import Tracker
-from symdex.utils.model_util import save_model
+#from symdex.utils.model_util import save_model
 from symdex.utils.symmetry import SymmetryManager
 
 

@@ -4,7 +4,7 @@ defaults:
 
 name: "SYMDEX"
 horizon_len: 64
-batch_size: 32768
+batch_size: 32 #32768
 gamma: 0.99
 act_class: DiagGaussianEquivariantMLPPolicy  # DiagGaussianMLPPolicy
 cri_class: EquivariantMLPNet  # MLPCritic

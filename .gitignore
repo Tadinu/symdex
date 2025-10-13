@@ -1,0 +1,6 @@
+*__pycache__*
+.idea/
+assets/
+build/
+outputs/
+symdex.egg-info/
