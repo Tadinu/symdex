@@ -1,11 +1,10 @@
 wandb:
   project: symdex
-  #name: test
+  mode: 'online'
+  tags: null
   group: null
-  #space_id: 'fame' # only to host on huggingface
-  #mode: 'online'
-  #tags: null
-  #entity: null
+  entity: tadhuskie89-waseda-university
+  name: test
   settings:
     ignore_globs: [ '*.pt' ]
     start_method: 'fork'

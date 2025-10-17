@@ -34,6 +34,6 @@ echo "All in one: $allpaths"
 
 for c in $allpaths
 do
-	rsync -avuzP $c "$SERVER"/$c
+	rsync -avzP $c "$SERVER"/$c
 	echo $c
 done

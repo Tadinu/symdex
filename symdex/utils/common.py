@@ -13,10 +13,8 @@ import platform
 from loguru import logger
 from omegaconf import OmegaConf, open_dict, DictConfig
 
-# trackio
-if not os.environ.get('TRACKIO_DIR'):
-    os.environ['TRACKIO_DIR'] = "/media/ducthan/376b23a1-5a02-4960-b3ca-24b2fcef8f891/TRACKIO_WANDB_CACHE"
-import trackio as wandb
+# wandb
+import wandb
 
 # isaaclab
 from isaaclab_tasks.utils.parse_cfg import load_cfg_from_registry
@@ -49,8 +47,9 @@ def init_wandb(hydra_cfg) -> wandb.Run:
     #     wandb_id = hydra_cfg.artifact.split("/")[-1].split(":")[0]
     #     wandb_run = wandb.init(**wandb_kwargs, config=wandb_cfg, id=wandb_id, resume="must")
     # else:
+    wandb.login(key=os.environ['WANDB_API_KEY'], verify=True)
     wandb_run = wandb.init(**wandb_kwargs, config=wandb_cfg)
-    #logger.warning(f'Wandb run dir:{TRACKIO_DIR}')
+    logger.warning(f'Wandb run dir:{wandb_run.dir}')
     logger.warning(f'Project name:{wandb_run.project}')
     return wandb_run
 

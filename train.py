@@ -1,3 +1,4 @@
+import os
 from itertools import count
 import hydra
 import gymnasium as gym
@@ -20,9 +21,8 @@ from symdex.utils.evaluator import Evaluator
 from symdex.utils.rl_env_wrapper import VecEnvWrapper
 from symdex.utils.common import CONFIG_DIR, CONFIG_NAME
 
-# trackio
-# NOTE: Must be after [symdex.utils.common], which defines os env TRACKIO_DIR
-import trackio as wandb
+# wandb
+import wandb
 
 @hydra.main(config_path=CONFIG_DIR, config_name=CONFIG_NAME, version_base=None)
 def main(hydra_cfg: DictConfig):
@@ -96,7 +96,8 @@ def main(hydra_cfg: DictConfig):
 
         if iter_t % hydra_cfg.task.randomize.update_freq == 0 and hydra_cfg.task.randomize.enable:
             # domain randomization
-            randomization_state, curriculum_state, best_so_far = env.unwrapped.update_randomization(log_info['train/success_rate'])
+            randomization_state, curriculum_state, best_so_far = (
+                env.unwrapped.update_randomization(log_info['train/success_rate']))
             success_max = float('-inf')
 
         if evaluator.check_if_should_stop(global_steps):

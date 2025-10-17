@@ -4,3 +4,5 @@ assets/
 build/
 outputs/
 symdex.egg-info/
+wandb/
+*.zip
