@@ -52,8 +52,8 @@ class PickObjectEnv(BaseEnv):
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
-    def _pre_init(self):
-        super()._pre_init()
+    def _post_init(self):
+        super()._post_init()
         self.success_step_tracker = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.object_on_tote_tracker = torch.zeros(self.num_object, self.num_envs, device=self.device)
         self.object_in_tote_tracker = torch.zeros(self.num_object, self.num_envs, device=self.device)

@@ -35,11 +35,10 @@ class HandoverEnv(BaseEnv):
 
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
-    
-    def _pre_init(self):
-        super()._pre_init()
-        self.reach_middle = torch.zeros(self.num_envs, device=self.device)
-        self.success_tracker_step = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+
+    def _post_init(self):
+        self.reach_middle = torch.zeros(self.hydra_cfg.num_envs, device=self.device)
+        self.success_tracker_step = torch.zeros(self.hydra_cfg.num_envs, device=self.device, dtype=torch.long)
 
     def _post_reset(self, env_ids):
         super()._post_reset(env_ids)

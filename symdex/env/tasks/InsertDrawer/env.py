@@ -30,8 +30,8 @@ class InsertDrawerEnv(BaseEnv):
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 
-    def _pre_init(self):
-        super()._pre_init()
+    def _post_init(self):
+        super()._post_init()
         self.success_tracker_step = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
 
     def _post_reset(self, env_ids):

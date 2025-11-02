@@ -43,9 +43,9 @@ class BaseEnv(ManagerBasedRLEnv):
     """Configuration for the environment."""
 
     def __init__(self, cfg: BaseEnvCfg, render_mode: str | None = None, **kwargs):
+        self.hydra_cfg = kwargs['hydra_cfg']
         self._pre_init(cfg)
         super().__init__(cfg=cfg)
-        self.hydra_cfg = kwargs['hydra_cfg']
 
         # allocate dictionary to store metrics
         self.extras = {}
